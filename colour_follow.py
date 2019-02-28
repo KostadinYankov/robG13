@@ -19,14 +19,13 @@ class Follower:
                                            queue_size=1)
         self.depth_image_CV2 = ""
             #print(depth_image_CV2)
-        
+        # assign new variable to self from Twist type
         self.twist = Twist()
-        tw = Twist()
-        tw.angular.z = .25
+        # assign twist object to its angluar z a value of .......
+        self.twist.angular.z = .25
 
     def depth_image_callback(self, data):
         self.depth_image_CV2 = self.bridge.imgmsg_to_cv2(data)
-
 
     def image_callback(self, message):
         # create windows to display 
