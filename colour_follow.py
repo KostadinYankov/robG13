@@ -22,7 +22,7 @@ class Follower:
         
         self.twist = Twist()
         tw = Twist()
-        tw.angular.z = twist
+        tw.angular.z = .25
 
     def depth_image_callback(self, data):
         self.depth_image_CV2 = self.bridge.imgmsg_to_cv2(data)
