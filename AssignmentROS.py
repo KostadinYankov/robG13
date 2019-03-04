@@ -74,14 +74,14 @@ class Follower:
         # filter out image to avoid confusion
         self.maskRed = cv2.medianBlur(self.maskRed,7)
         # GREEN mask
-        lowerGreen = numpy.array([110, 120, 100])
-        upperGreen = numpy.array([130, 255, 255])
+        lowerGreen = numpy.array([60, 120, 100])
+        upperGreen = numpy.array([70, 255, 255])
         self.maskGreen = cv2.inRange(hsv, lowerGreen, upperGreen)
         # filter out image to avoid confusion        
         self.maskGreen = cv2.medianBlur(self.maskGreen,7)
         # BLUE mask
-        lowerBlue = numpy.array([60, 120, 100])
-        upperBlue = numpy.array([70, 255, 255])
+        lowerBlue = numpy.array([110, 120, 100])
+        upperBlue = numpy.array([130, 255, 255])
         # filter out image to avoid confusion        
         self.maskBlue = cv2.inRange(hsv, lowerBlue, upperBlue)
         # filter out image to avoid confusion
@@ -156,10 +156,10 @@ class Follower:
                             print("Red found!")
                         elif centerHSV[0] >= lowerGreen[0] and centerHSV[0] <= upperGreen[0]:
                             self.coloursVisited[1] = True                            
-                            print("Blue found!")
+                            print("Green found!")
                         elif centerHSV[0] >= lowerBlue[0] and centerHSV[0] <= upperBlue[0]:
                             self.coloursVisited[2] = True                            
-                            print("Green found!")
+                            print("Blue found!")
                         elif centerHSV[0] >= lowerYellow[0] and centerHSV[0] <= upperYellow[0]:                            
                             self.coloursVisited[3] = True                            
                             print("Yellow found!")
@@ -173,7 +173,7 @@ class Follower:
             self.velocityPublisher.publish(self.twist)
         cv2.imshow("RobotView", imageRobot)
         cv2.imshow("SegmentedView", colourAvgFilt)
-        #cv2.imshow("MaskRed", maskRed)
+        cv2.imshow("MaskRed", self.maskRed)
         #cv2.imshow("MaskGreen", maskGreen)
         #cv2.imshow("MaskBlue", maskBlue)
         #cv2.imshow("MaskYellow", maskYellow)
