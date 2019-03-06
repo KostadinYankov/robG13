@@ -5,72 +5,34 @@ import cv2
 import cv_bridge
 import rospy
 from sensor_msgs.msg import Image
-from geometry_msgs.msg import Twist, Point
-
-#######################################################################################
-#import actionlib
-#from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
-#from actionlib_msgs.msg import GoalStatus
-
-from nav_msgs.msg import Odometry
-from tf.transformations import euler_from_quaternion
-
-from math import atan2
-
+from geometry_msgs.msg import Twist
+#################################copy guy
 
 class Follower:
-    
-    
-    
-    x = 0.0
-    y = 0.0
-    theta = 0.0
 
-    def newOdom(self, msg):
-        global x
-        global y
-        global theta
 
-        x = msg.pose.pose.position.x
-        y = msg.pose.pose.position.y
-
-        rot_q = msg.pose.pose.orientation
-        (roll, pitch, theta) = euler_from_quaternion([rot_q.x, rot_q.y,rot_q.z, rot_q.w])
     def __init__(self):
         self.bridge = cv_bridge.CvBridge()
         # subscribe to RGB image
-        self.imageSubscriber = rospy.Subscriber('/camera/rgb/image_raw', Image,
-                                          self.image_callback)
+        self.imageSubscriber = rospy.Subscriber('/camera/rgb/image_raw', Image, self.image_callback)
         # subscribe to Depth image                                  
-        self.depthImageSub = rospy.Subscriber('/camera/depth/image_raw', Image,
-                                          self.depth_image_callback)
+        self.depthImageSub = rospy.Subscriber('/camera/depth/image_raw', Image, self.depth_image_callback)
         # publish movement commands                                  
-        self.velocityPublisher = rospy.Publisher('/mobile_base/commands/velocity', Twist,
-                                           queue_size=1)
-                                           
-        self.sub = rospy.Subscriber('/odom', Odometry, self.newOdom)
-        
-        # publishing to velocity
-        #self.pub = rospy.Publisher('/mobile_base/commands/velocity', Twist, queue_size=1)                                  
-                                           
-                                           
-                                           
-                                           
+        self.velocityPublisher = rospy.Publisher('/mobile_base/commands/velocity', Twist, queue_size=1)                                  
         # placeholder                                    
         self.depth_image_CV2 = ""
         
         # assign new variable to self from Twist type
         self.twist = Twist()
-####################################################################################################
-
-#################################################################################################
         # placeholder values set for HSV masks
         self.maskRed = None
         self.maskGreen = None
         self.maskBlue = None
         self.maskYellow = None
         
-        self.colourMasks = [self.maskRed, self.maskGreen, self.maskBlue,
+        self.colourMasks = [self.maskRed, 
+                            self.maskGreen, 
+                            self.maskBlue,
                             self.maskYellow]
        
         # dictionary of visited colours
@@ -82,8 +44,6 @@ class Follower:
     def depth_image_callback(self, data):
         # converts ROS depth image to numpy array
         self.depth_image_CV2 = self.bridge.imgmsg_to_cv2(data)
-        
-
         
         #  this is the function starts every time when camera/rgb/image_raw is updated
     def image_callback(self, message):
@@ -131,7 +91,9 @@ class Follower:
         # filter out image to avoid confusion        
         self.maskYellow = cv2.medianBlur(self.maskYellow,7)
         # correspond to the bool array
-        self.colourMasks = [self.maskRed, self.maskGreen, self.maskBlue,
+        self.colourMasks = [self.maskRed, 
+                            self.maskGreen,
+                            self.maskBlue,
                             self.maskYellow]
                             
         #print(self.coloursVisited)
@@ -163,6 +125,7 @@ class Follower:
         # like region probs like from matlab
         # contour area from the centroid for X and Y
         # so there are sums of X and the Sums of Y 
+        
         if move['m00'] > 0:
             centerX = int(move['m10']/move['m00'])
             centerY = int(move['m01']/move['m00'])
@@ -171,7 +134,11 @@ class Follower:
             error = centerX - width/2
             self.twist.linear.x = 1
             self.twist.angular.z = -float(error) / 100
-
+# place object coordinates infron of the robot
+# go towards objet coordinates ... this hapens automatically
+# also stop before hitting object 
+# it will navigate towards object and avoid obstacle
+            
             distanceToObject = self.depth_image_CV2[centerY, centerX]
             # print(distanceToObject)
             
@@ -206,40 +173,16 @@ class Follower:
         else:
             self.twist.angular.z = 0.5
             self.twist.linear.x  = 0.0        
-            self.velocityPublisher.publish(self.twist)
-        
-            twist = Twist()
-            self.r = rospy.Rate(4)
-            goal = Point()
-            goal.x = 5
-            goal.y = 5
-            while not rospy.is_shutdown():
-                inc_x = goal.x - x
-                inc_y = goal.y - y
-            
-                angle_to_goal = atan2(inc_y, inc_x)
-            
-                if abs(angle_to_goal - theta) > 0.1:
-                    twist.linear.x = 0.0
-                    twist.angular.z = 0.3
-                else:
-                    twist.linear.x = 0.5
-                    twist.angular.z = 0.0
-            
-                self.velocityPublisher.publish(twist)
-                
-                if self.coloursVisited ==  [True] * 4:
-                    break
+            self.velocityPublisher.publish(self.twist)        
         cv2.imshow("RobotView", imageRobot)
         cv2.imshow("SegmentedView", colourAvgFilt)
-        cv2.imshow("MaskRed", self.maskRed)
+        #cv2.imshow("MaskRed", self.maskRed)
         #cv2.imshow("MaskGreen", maskGreen)
         #cv2.imshow("MaskBlue", maskBlue)
         #cv2.imshow("MaskYellow", maskYellow)
         
         # how long it wait between refresh
         cv2.waitKey(1)
-
 
 cv2.startWindowThread()
 rospy.init_node('follower')
