@@ -5,13 +5,18 @@ import cv2
 import cv_bridge
 import rospy
 from sensor_msgs.msg import Image
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist, PoseStamped, Pose, Point, Quaternion
+from std_msgs.msg import Header
+#import datetime
 #################################copy guy
 
 class Follower:
 
-
     def __init__(self):
+        self.moveSomewhere = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=1) 
+        self.counterPublish = 0
+        
+        
         self.bridge = cv_bridge.CvBridge()
         # subscribe to RGB image
         self.imageSubscriber = rospy.Subscriber('/camera/rgb/image_raw', Image, self.image_callback)
@@ -47,14 +52,60 @@ class Follower:
         
         #  this is the function starts every time when camera/rgb/image_raw is updated
     def image_callback(self, message):
+        global counterPublish
+        
         if numpy.sum(numpy.array(self.coloursVisited).astype('int')) == 4:
             self.twist.linear.x  = 0.0
             self.twist.angular.z = 0.0
             self.velocityPublisher.publish(self.twist)            
             cv2.destroyAllWindows()            
             exit()
+            
+        if self.moveSomewhere.get_num_connections() == 1:
+            if self.counterPublish == 0:
+                #PoseStamped 
+                    # header
+                    #   frame_id
+                    # pose
+                    #   position
+                    #       x
+                    #       y
+                    #   orientation
+                    #       x
+                    #       y
+                    #       z
+                    #       w
+            
+                positionPoint = Point()
+                positionPoint.x =  1.0
+                positionPoint.y =  3.0
+                
+                orientationQuaternion = Quaternion()
+                orientationQuaternion.w = 1.0
+                
+                posePose = Pose()
+                posePose.position = positionPoint
+                posePose.orientation = orientationQuaternion
+                
+                headerHeader = Header()
+                headerHeader.frame_id = '/map'
+                headerHeader.stamp = rospy.Time.now()
+                
+                posePoseStamped = PoseStamped()
+                posePoseStamped.header = headerHeader
+                posePoseStamped.pose = posePose
+                self.moveSomewhere.publish(posePoseStamped)
+                
+                print('Published move goal to {0}, {1}.'.format(posePoseStamped.pose.position.x, posePoseStamped.pose.position.y))            
+                
+                self.counterPublish += 1
+            
+            # if this has happened then start look for a color
+         
         
-        self.velocityPublisher.publish(self.twist)
+        
+        
+        """self.velocityPublisher.publish(self.twist)
         # print self.twist
         # create windows to display 
         cv2.namedWindow("RobotView", 1)
@@ -142,8 +193,12 @@ class Follower:
             distanceToObject = self.depth_image_CV2[centerY, centerX]
             # print(distanceToObject)
             
+            ####################################
+            # print distance to object
             
             if distanceToObject < 1.0:
+                print('Object is now: {0}m away.'.format(distanceToObject))
+                
                 self.twist.linear.x  = 0.0
                 self.twist.angular.z = 0.5
                 # print("Object found")
@@ -153,7 +208,7 @@ class Follower:
                     # thresholds to get colour found
                     centerHSV = hsvNoCircle[centerY, centerX]
                     # first if statement excludes errors in reading HSV values
-                    print(centerHSV)
+                    #print(centerHSV)
                     if not centerHSV[1] == 0 and not centerHSV[2] == 155:           
                         if (centerHSV[0] >= lowerRed[0] and centerHSV[0] <= upperRed[0]) or \
                         (centerHSV[0] >= 170 and centerHSV[0] <= 180):
@@ -182,7 +237,7 @@ class Follower:
         #cv2.imshow("MaskYellow", maskYellow)
         
         # how long it wait between refresh
-        cv2.waitKey(1)
+        cv2.waitKey(1)"""
 
 cv2.startWindowThread()
 rospy.init_node('follower')

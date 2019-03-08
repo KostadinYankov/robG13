@@ -25,26 +25,12 @@ from math import atan2
 
 
 class Follower:
-
-    x = 0.0
-    y = 0.0
-    theta = 0.0
-
-    def newOdom(self, msg):
-        global x
-        global y
-        global theta
-
-        x = msg.pose.pose.position.x
-        y = msg.pose.pose.position.y
-
-        rot_q = msg.pose.pose.orientation
-        (roll, pitch, theta) = euler_from_quaternion([rot_q.x, rot_q.y,
-                rot_q.z, rot_q.w])
-
-
-
     def __init__(self):
+        
+        self.x = 0
+        self.y = 0
+        self.theta = 0
+        
         self.bridge = cv_bridge.CvBridge()
 
         # subscribe to RGB image
@@ -64,7 +50,7 @@ class Follower:
                             queue_size=1) 
         
         # to subscribe to filtered odometry
-        #self.sub = rospy.Subscriber('/odom', Odometry, self.newOdom)
+        self.sub = rospy.Subscriber('/odom', Odometry, self.newOdom)
         
         # publishing to velocity
         #self.pub = rospy.Publisher('/mobile_base/commands/velocity', Twist, queue_size=1)
@@ -137,6 +123,20 @@ class Follower:
         self.firstUnseenInd = 0
 
         # values from ROS image to an array
+
+
+
+    def newOdom(self, msg):
+       
+        global theta
+
+        self.x = msg.pose.pose.position.x
+        self.y = msg.pose.pose.position.y
+
+        rot_q = msg.pose.pose.orientation
+        (roll, pitch, theta) = euler_from_quaternion([rot_q.x, rot_q.y,
+                rot_q.z, rot_q.w])
+       
 
     def depth_image_callback(self, data):
 
@@ -323,9 +323,10 @@ class Follower:
             goal = Point()
             goal.x = 5
             goal.y = 5
+            
             while not rospy.is_shutdown():
-                inc_x = goal.x - x
-                inc_y = goal.y - y
+                inc_x = goal.x - self.x
+                inc_y = goal.y - self.y
             
                 angle_to_goal = atan2(inc_y, inc_x)
             
@@ -336,11 +337,12 @@ class Follower:
                     speed.linear.x = 0.5
                     speed.angular.z = 0.0
             
-                self.pub.publish(speed)
+                self.velocityPublisher.publish(speed)
                 
                 if self.coloursVisited ==  [True] * 4:
                     break
-
+                
+               # r.sleep()
 
 
             
