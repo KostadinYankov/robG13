@@ -5,17 +5,20 @@ import cv2
 import cv_bridge
 import rospy
 from sensor_msgs.msg import Image
-from geometry_msgs.msg import Twist, PoseStamped, Pose, Point, Quaternion
+from geometry_msgs.msg import Twist, PoseStamped, Pose, Point, Quaternion, PoseWithCovariance
 from std_msgs.msg import Header
+from time import sleep
 #import datetime
 #################################copy guy
 
 class Follower:
-
+    
+    posRobot = PoseWithCovariance()
+    PI = 3.1415926535897
     def __init__(self):
         self.moveSomewhere = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=1) 
-        self.counterPublish = 0
-        
+        #self.dataTaken = rospy.Subscriber('/amcl_pose', PoseWithCovariance, self.posCallBack )
+        #print("first run")
         
         self.bridge = cv_bridge.CvBridge()
         # subscribe to RGB image
@@ -42,7 +45,7 @@ class Follower:
        
         # dictionary of visited colours
         self.coloursVisited = [False] * 4
-               
+        self.counterPublish = 0
         self.firstUnseenInd = 0
             
         # values from ROS image to an array    
@@ -51,18 +54,20 @@ class Follower:
         self.depth_image_CV2 = self.bridge.imgmsg_to_cv2(data)
         
         #  this is the function starts every time when camera/rgb/image_raw is updated
-    def image_callback(self, message):
-        global counterPublish
         
-        if numpy.sum(numpy.array(self.coloursVisited).astype('int')) == 4:
-            self.twist.linear.x  = 0.0
-            self.twist.angular.z = 0.0
-            self.velocityPublisher.publish(self.twist)            
-            cv2.destroyAllWindows()            
-            exit()
-            
+        #print("second run")
+    #def spin(self):
+        #self.rotate = True
+        #if self.rotate:
+            #self.startAngle = 
+    #def posCallBack(self, data ):
+        #self.posRobot = data
+        # holds the position of robot
+       # print(self.posRobot)
+    def moveToGoal(self, x, y):
+    
         if self.moveSomewhere.get_num_connections() == 1:
-            if self.counterPublish == 0:
+            if self.counterPublish == 0 :
                 #PoseStamped 
                     # header
                     #   frame_id
@@ -75,10 +80,11 @@ class Follower:
                     #       y
                     #       z
                     #       w
-            
+                print("move to goal function")
+                global positionPoint 
                 positionPoint = Point()
-                positionPoint.x =  -4.0
-                positionPoint.y =  -5.0
+                positionPoint.x = x
+                positionPoint.y = y
                 
                 orientationQuaternion = Quaternion()
                 orientationQuaternion.w = 1.0
@@ -96,15 +102,25 @@ class Follower:
                 posePoseStamped.pose = posePose
                 self.moveSomewhere.publish(posePoseStamped)
                 
+                print("3rd run")
                 print('Published move goal to {0}, {1}.'.format(posePoseStamped.pose.position.x, posePoseStamped.pose.position.y))            
                 
                 self.counterPublish += 1
-            
+     
             # if this has happened then start look for a color
-         
+            print (self.counterPublish)
         
-        
-        
+    def image_callback(self, message):
+        global counterPublish
+        global positionPoint
+       
+        if numpy.sum(numpy.array(self.coloursVisited).astype('int')) == 4:
+            self.twist.linear.x  = 0.0
+            self.twist.angular.z = 0.0
+            self.velocityPublisher.publish(self.twist)            
+            cv2.destroyAllWindows()            
+            exit()
+     
         self.velocityPublisher.publish(self.twist)
         # print self.twist
         # create windows to display 
@@ -191,7 +207,7 @@ class Follower:
 # it will navigate towards object and avoid obstacle
             
             distanceToObject = self.depth_image_CV2[centerY, centerX]
-            # print(distanceToObject)
+            print(distanceToObject)
             
             ####################################
             # print distance to object
@@ -225,19 +241,32 @@ class Follower:
                             print("Yellow found!")
                 except:
                     pass
-        else:
-            self.twist.angular.z = 0.5
+                
+            else: 
+                self.twist.linear.x = 1
+        elif move['m00'] < 0:
+            speed = 0.5
+            print("twist because there is nothing else to do !!!!!")
+            self.twist.angular.z = speed*self.PI/360
             self.twist.linear.x  = 0.0        
             self.velocityPublisher.publish(self.twist)        
-        cv2.imshow("RobotView", imageRobot)
-        cv2.imshow("SegmentedView", colourAvgFilt)
-        #cv2.imshow("MaskRed", self.maskRed)
-        #cv2.imshow("MaskGreen", maskGreen)
-        #cv2.imshow("MaskBlue", maskBlue)
-        #cv2.imshow("MaskYellow", maskYellow)
+            cv2.imshow("RobotView", imageRobot)
+            cv2.imshow("SegmentedView", colourAvgFilt)       
+            #cv2.imshow("MaskRed", self.maskRed)
+            #cv2.imshow("MaskGreen", maskGreen)
+            #cv2.imshow("MaskBlue", maskBlue)
+            #cv2.imshow("MaskYellow", maskYellow)
+            print("success with twist in 1 full spin")
+            
+        else:
+            print("goal activated here")
+            self.moveToGoal(-4.0, -4.0)
+            #self.moveToGoal(5.0, 5.0)
+            sleep(10)
         
+            
         # how long it wait between refresh
-        cv2.waitKey(1)
+            cv2.waitKey(1)
 
 cv2.startWindowThread()
 rospy.init_node('follower')
