@@ -8,16 +8,22 @@ from sensor_msgs.msg import Image
 from geometry_msgs.msg import Twist, PoseStamped, Pose, Point, Quaternion, PoseWithCovariance
 from std_msgs.msg import Header
 from time import sleep
-from move_base_msgs.msg import MoveBaseActionGoal
+from move_base_msgs.msg import MoveBaseActionGoal, MoveBaseGoal, MoveBaseAction
 from random import random
-
-class Follower:
+import actionlib
+from actionlib_msgs.msg import *
+from kobuki_msgs.msg import BumperEvent
+class Follower: # create class
     
 
-    def __init__(self):
+    def __init__(self): # initialisisation
+        # publisher moveSomewhere with topic to publish moveBaseGoal, type of message and queue size
         self.moveSomewhere = rospy.Publisher('/move_base/goal', MoveBaseActionGoal, queue_size=2)
-
+        # counts the spins when the robot turns
         self.countSpin = 0
+        #
+        self.moveBase = actionlib.SimpleActionClient("move_base", MoveBaseAction)
+        # ros library to convert ROS images to OpenCV
         self.bridge = cv_bridge.CvBridge()
         # subscribe to RGB image
         self.imageSubscriber = rospy.Subscriber('/camera/rgb/image_raw', Image, self.image_callback)
@@ -25,36 +31,49 @@ class Follower:
         self.depthImageSub = rospy.Subscriber('/camera/depth/image_raw', Image, self.depth_image_callback)
         # publish movement commands                                  
         self.velocityPublisher = rospy.Publisher('/mobile_base/commands/velocity', Twist, queue_size=1)                                  
-        # placeholder                                    
+        # placeholder for later on to hold the depth of the point                                   
         self.depth_image_CV2 = ""
-        
         # assign new variable to self from Twist type
         self.twist = Twist()
+        self.msg = Twist()
         # placeholder values set for HSV masks
         self.maskRed = None
         self.maskGreen = None
         self.maskBlue = None
         self.maskYellow = None
-        
+        # array of the masks
         self.colourMasks = [self.maskRed, 
                             self.maskGreen, 
                             self.maskBlue,
                             self.maskYellow]
-       
         # dictionary of visited colours
         self.coloursVisited = [False] * 4
-        self.counterPublish = 0
+        #self.counterPublish = 0
+        # unseen colour variable for later on to be stored in to
         self.firstUnseenInd = 0
-
-
-        self.listOfPoints = [(4,-5),(2, 0), (3, 3.5), (-4,1.6),(4,4), (3.5,-3.5)]
+        # array of the desired points to vizit
+        self.listOfPoints = [(4,-4),(-4,-4),(0.5, -0.2), (-1.5, 3.5), (-4,1.6),(-4.5,5),(-4,1),(-4.5,4),]
+        # counter for visited points 
         self.listCount = 0
+        # boolian variable to check if the searching function is on 
         self.searchObjects = True
-        sleep(2)
+        #sleep(2)
+        self.main() # initialise main function
+        #################################################
+        #self.onBump= None
+        # bump susbscriber
+        #self.bumpSub = rospy.Subscriber(('/mobile_base/events/bumper', BumperEvent, self.bumpFunction)
 
-        self.main()
+        #self.velocityPublisher.publish(msg)
 
-
+        
+    """def bumpFunction(self,msg):
+        if msg.state != BumperEvent.PRESSED:
+            return
+        if msg.bumper not in [BumperEvent.CENTER, BumperEvent.LEFT, BumperEvent.RIGHT]:
+            return
+        if self.onBump is not None:
+            self.onBump.__call__()"""
 
 
     # values from ROS image to an array of data
@@ -62,34 +81,49 @@ class Follower:
         # converts ROS depth image to numpy array
         self.depth_image_CV2 = self.bridge.imgmsg_to_cv2(data)
 
-
-
     # this is the function starts every time when camera/rgb/image_raw is updated
     def image_callback(self, message):
         self.image_data = message
 
-
+    # moving to a desired place in the map function
     def moveToGoal(self, x, y):
         self.searchObjects = False
         goSomewhere = MoveBaseActionGoal()
-
         goSomewhere.goal.target_pose.header.seq = 0
         goSomewhere.goal.target_pose.header.stamp = rospy.Time.now()
         goSomewhere.goal.target_pose.header.frame_id = "map"
-
         goSomewhere.goal.target_pose.pose.position.x = x
         goSomewhere.goal.target_pose.pose.position.y = y
         goSomewhere.goal.target_pose.pose.orientation.w = 1
-
         self.moveSomewhere.publish(goSomewhere)
 
-        sleep(35)
-        print("35 Seconds Reached")
+        sleep(30)
+        #print("30 Seconds Reached")
         print("Going to a place !")
         #self.searchObjects =True
 
+    def goForwardAndAvoid(self,x):
+        self.searchObjects = True
+        # send goal to move forward
+        goal = MoveBaseGoal()
+        #goal.goal.target_pose.header.seq = 0
+        goal.target_pose.header.frame_id = 'base_link'
+        goal.target_pose.header.stamp = rospy.Time.now()
+        goal.target_pose.pose.position.x = 9 # meters we want the robot to go forward
+        #goal.goal.target_pose.pose.orientation.w =
+        self.moveBase.send_goal(goal)
+        sleep(1)
+        print("Go forward and AVOID")
+
+
+
+
+
+
+
     def generateMasks(self):
         self.velocityPublisher.publish(self.twist)
+        #self.moveSomewhere.publish(self.goal)
         # print self.twist
         # create windows to display
         cv2.namedWindow("RobotView", 1)
@@ -189,8 +223,11 @@ class Follower:
 
                     if distanceToObject > 1.0 or numpy.isnan(distanceToObject):
                         error = centerX - width/2
-
+                        print(distanceToObject)
+                        #self.twist.linear.x = self.goForwardAndAvoid(5)
                         self.twist.linear.x = 1
+                        self.goForwardAndAvoid(10)
+
                         self.twist.angular.z = -float(error) / 100
 
                         self.velocityPublisher.publish(self.twist)
@@ -203,6 +240,8 @@ class Follower:
                         print('Object is now: {0}m away.'.format(distanceToObject))
                         self.twist.linear.x = 0
                         self.twist.angular.z = 0
+                        # asuring that only 1 object will be detected at a time
+                        self.countSpin= 200
                         #sleep(1)
 
 
@@ -250,16 +289,18 @@ class Follower:
                             #self.twist.angular.z = 1
                             self.velocityPublisher.publish(t)
                             #self.countSpin +=
+                            self.twist.linear.x = 0
                             self.twist.angular.z = 0
                             #self.countSpin = 200
-
+                            
                             #self.twist.angular.z = 0
                         elif self.listCount <= len(self.listOfPoints):
                             # fist element of the list of points self.activate = False
-                            # self.searchObjects = False
+                           
                             self.moveToGoal(self.listOfPoints[self.listCount][0], self.listOfPoints[self.listCount][1])
                             self.listCount += 1
                             self.countSpin = 0
+                            
                         else:
                             # if it is last element quit program
                             print("finish program")
@@ -285,12 +326,6 @@ class Follower:
                     cv2.destroyAllWindows()
                     exit()
 
-            #move['m00'] < 0:
-             #   speed = 0.5
-              #  print("twist because there is nothing else to do !!!!!")
-               # self.twist.angular.z = speed*self.PI/360
-                #self.twist.linear.x  = 0.0
-                #self.velocityPublisher.publish(self.twist
                     cv2.imshow("RobotView", imageRobot)
                     cv2.imshow("SegmentedView", colourAvgFilt)
 
