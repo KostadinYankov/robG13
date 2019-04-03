@@ -229,21 +229,18 @@ class Follower: # create class
                     cv2.circle(self.imageRobot, (centerX, centerY), 20, (255, 0, 255), -1)
                     distanceToObject = self.depth_image_CV2[centerY, centerX]
 
-                    print(distanceToObject)
                     # if the object in view is more than 1m away
-                    #print(distanceToObject)
-                    #print(numpy.isnan(distanceToObject))
-
                     if distanceToObject > 1.0 or numpy.isnan(distanceToObject):
                         error = centerX - width/2
                         print(distanceToObject)
+
                         self.twist.angular.z = -float(error) / 100
                         self.velocityPublisher.publish(self.twist)
 
-                        if (colourAvgFilt[240,320] != 0):
+                        if (unseenMasks[240,320] != 0):
                             print("object centered")
                             self.goForwardAndAvoid(distanceToObject-0.5, 0)
-                            sleep(1)
+                            sleep(10)
 
 
                     #if the object in view is less than 1m away
