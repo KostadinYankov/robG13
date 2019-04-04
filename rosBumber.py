@@ -228,26 +228,29 @@ class Follower: # create class
                     centerY = int(move['m01']/move['m00'])
                     cv2.circle(self.imageRobot, (centerX, centerY), 20, (255, 0, 255), -1)
                     distanceToObject = self.depth_image_CV2[centerY, centerX]
-
-                    print(distanceToObject)
+                    error = centerX - width/2
+                    #print(distanceToObject)
                     # if the object in view is more than 1m away
                     #print(distanceToObject)
                     #print(numpy.isnan(distanceToObject))
-
+                    print(colourAvgFilt)
                     if distanceToObject > 1.0 or numpy.isnan(distanceToObject):
-                        error = centerX - width/2
-                        print(distanceToObject)
-                        self.twist.angular.z = -float(error) / 100
-                        self.velocityPublisher.publish(self.twist)
-
-                        if (colourAvgFilt[240,320] != 0):
+                        #print(self.hsvNoCircle)
+                        print(move['m00'])
+                        if (colourAvgFilt[240,320] != 0) :
                             print("object centered")
+                            #print('Object is now: {0}m away.'.format(distanceToObject))
                             self.goForwardAndAvoid(distanceToObject-0.5, 0)
                             sleep(1)
+                        else:
+                            error = centerX - width/2
+                            #print(distanceToObject)
+                            self.twist.angular.z = -float(error) / 100
+                            self.velocityPublisher.publish(self.twist)
 
 
                     #if the object in view is less than 1m away
-                    elif distanceToObject <= 1.0:
+                    elif distanceToObject <= 1.0 or (move['m00']) < 1000000:
                         print('Object is now: {0}m away.'.format(distanceToObject))
                         self.twist.linear.x = 0
                         self.twist.angular.z = 0
@@ -262,6 +265,7 @@ class Follower: # create class
                             # finding HSV of centre of circle, and comparing with
                             # thresholds to get colour found
                             centerHSV = self.hsvNoCircle[centerY, centerX]
+                            
                             # first if statement excludes errors in reading HSV values
                             #print(centerHSV)
                             if not centerHSV[1] == 0 and not centerHSV[2] == 155:
