@@ -240,7 +240,7 @@ class Follower: # create class
                         if (unseenMasks[240,320] != 0):
                             print("object centered")
                             self.goForwardAndAvoid(distanceToObject-0.5, 0)
-                            sleep(10)
+                            #sleep(10)
 
 
                     #if the object in view is less than 1m away
