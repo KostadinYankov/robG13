@@ -53,7 +53,7 @@ class Follower: # create class
         # unseen colour variable for later on to be stored in to
         self.firstUnseenInd = 0
         # array of the desired points to visit
-        self.listOfPoints = [(4,-4),(-4,-4),(0.5, -0.2), (-1.5, 3.5), (-4,1.6),(-4.5,5),(-4,1),(-4.5,4),]
+        self.listOfPoints = [(4,-4),(-4,-4),(0.5, -0.2),(2,-1) ,(-1.5, 3.5), (-4,1.6),(-4.5,5),(-4,1),(-4.5,4),]
         # counter for visited points 
         self.listCount = 0
         # boolian variable to check if the searching function is on 
@@ -67,16 +67,6 @@ class Follower: # create class
 
         #self.velocityPublisher.publish(msg)
 
-        
-    """def bumpFunction(self,msg):
-        if msg.state != BumperEvent.PRESSED:
-            return
-        if msg.bumper not in [BumperEvent.CENTER, BumperEvent.LEFT, BumperEvent.RIGHT]:
-            return
-        if self.onBump is not None:
-            self.onBump.__call__()"""
-
-
     # values from ROS image to an array of data
     def depth_image_callback(self, data):
         # converts ROS depth image to numpy array
@@ -88,7 +78,7 @@ class Follower: # create class
 
     # moving to a desired place in the map function
     def moveToGoal(self, x, y):
-        print("Moving to next position")
+        print("Moving to next position !")
         self.searchObjects = False
         goSomewhere = MoveBaseActionGoal()
         goSomewhere.goal.target_pose.header.seq = 0
@@ -101,11 +91,11 @@ class Follower: # create class
 
         sleep(25)
         #print("30 Seconds Reached")
-        print("move goal finished")
+        #print("move goal finished")
         #self.searchObjects =True
 
     def goForwardAndAvoid(self,x,z):
-        print("Go forward and AVOID started :")
+        #print("Go forward and AVOID started :")
         #self.searchObjects = True
         # converts the angle in radians to 4 dimentianal input for Twist
         # z is calculated as an angle .... radians ???
@@ -119,10 +109,9 @@ class Follower: # create class
         goal.goal.target_pose.pose.position.x = x # meters we want the robot to go forward
         goal.goal.target_pose.pose.orientation.w = angle[3]
         goal.goal.target_pose.pose.orientation.z = angle[2]
-
         self.moveSomewhere.publish(goal)
         #sleep(10)
-        print("Go forward and AVOID finished")
+        #print("Go forward and AVOID finished")
 
 
 
@@ -216,6 +205,7 @@ class Follower: # create class
             # so there are sums of X and the Sums of Y
             # /mobile_base/events/bumper
 
+
             #if not looking for objects
             if not self.searchObjects:
                 # use that here to see if bump into something
@@ -240,7 +230,7 @@ class Follower: # create class
                         if (colourAvgFilt[240,320] != 0) :
                             print("object centered")
                             #print('Object is now: {0}m away.'.format(distanceToObject))
-                            self.goForwardAndAvoid(distanceToObject-0.5, 0)
+                            self.goForwardAndAvoid(distanceToObject-0.9, 0)
                             sleep(10)
                         else:
                             error = centerX - width/2
@@ -322,7 +312,9 @@ class Follower: # create class
                             self.velocityPublisher.publish(self.twist)
                             cv2.destroyAllWindows()
                             exit()
-
+                cv2.imshow("RobotView", self.imageRobot)
+                cv2.imshow("SegmentedView", colourAvgFilt)
+                cv2.waitKey(1)
             else:
                 # if not the last element of the list, move again
                 if self.listCount <= len(self.listOfPoints):
@@ -339,15 +331,14 @@ class Follower: # create class
                     cv2.destroyAllWindows()
                     exit()
 
-                    cv2.imshow("RobotView", imageRobot)
-                    cv2.imshow("SegmentedView", colourAvgFilt)
+                   
 
 
 
 
 
                     # how long it wait between refresh
-                    cv2.waitKey(1)
+                    
 
 cv2.startWindowThread()
 rospy.init_node('follower')
