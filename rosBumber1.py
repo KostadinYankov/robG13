@@ -7,7 +7,7 @@ import rospy
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Twist, PoseStamped, Pose, Point, Quaternion, PoseWithCovariance
 from std_msgs.msg import Header
-from time import sleep
+from time import sleep, gmtime,strftime, time
 from move_base_msgs.msg import MoveBaseActionGoal, MoveBaseGoal, MoveBaseAction
 from random import random
 from tf.transformations import quaternion_from_euler
@@ -25,6 +25,8 @@ class Follower: # create class
         # counts the spins when the robot turns
         self.countSpin = 0
         #
+        self.timeHere=time()
+        self.currTime = strftime("%H:%M:%S", gmtime())
         self.moveBase = actionlib.SimpleActionClient("move_base", MoveBaseAction)
         # ros library to convert ROS images to OpenCV
         self.bridge = cv_bridge.CvBridge()
@@ -55,7 +57,7 @@ class Follower: # create class
         # unseen colour variable for later on to be stored in to
         self.firstUnseenInd = 0
         # array of the desired points to visit
-        self.listOfPoints = [(4,-3),(4,-4),(-4,-4),(0.5, -0.2),(2,-1) ,(-1.5, 3.5),(2,-4), (-4,1.6),(-4.5,5),(-4,1),(-4.5,4),]
+        self.listOfPoints = [(4,-4),(-4,-4),(0.5, -0.2),(3,-1) ,(-1.5, 3.5),(3,-4),(2,-4), (-4,1.6),(-4.5,5),(-4,1),(-4.5,4),(-4,-2),(-1,-2)] # 10
         # counter for visited points 
         self.listCount = 0
         # boolian variable to check if the searching function is on 
@@ -170,6 +172,7 @@ class Follower: # create class
 
 
     def main(self):
+        print ("start programe" + str(self.timeHere))
         while not rospy.is_shutdown():
             # end program if all 4 colours are found
             if numpy.sum(numpy.array(self.coloursVisited).astype('int')) == 4:
@@ -210,7 +213,7 @@ class Follower: # create class
 
             #if not looking for objects
             if not self.searchObjects:
-                
+
                 # use that here to see if bump into something
                 # if there are any objects in the mask
                 if move['m00'] > 0:
@@ -227,13 +230,13 @@ class Follower: # create class
                     print(distanceToObject)
                     #print(numpy.isnan(distanceToObject))
                     #print(colourAvgFilt)
-                    
-                    if (distanceToObject > 1.0 or numpy.isnan(distanceToObject)) or (distanceToObject > 1.0 and  (move['m00']) > 152000.0):
+
+                    if (distanceToObject > 1.0 or numpy.isnan(distanceToObject)) :#or (distanceToObject > 1.0 and  (move['m00']) > 0):
                         #self.twist.linear.x = 0.6
                         #colourAvgFilt[240,320] != 0
                         self.goForwardAndAvoid(distanceToObject-0.5, 0)
                         #print(self.hsvNoCircle)
-                        print(move['m00'])
+                        #print(move['m00'])
                         if (colourAvgFilt[240,320] != 0) :
                             #print("object centered")
                             #print('Object is now: {0}m away.'.format(distanceToObject))
@@ -245,9 +248,9 @@ class Follower: # create class
                             self.twist.angular.z = -float(error) / 100
                             self.velocityPublisher.publish(self.twist)
                             self.goForwardAndAvoid(distanceToObject-0.5, 0)
-                        
+
                     #if the object in view is less than 1m away
-                    elif distanceToObject < 1.0 and distanceToObject > 0.5 or (move['m00']) < 1361000 and numpy.isnan(distanceToObject):
+                    elif (distanceToObject < 1.0 and distanceToObject > 0.5) or (move['m00']) < 1361000 and numpy.isnan(distanceToObject):
                         print('Object is now: {0}m away.'.format(distanceToObject))
                         self.twist.linear.x = 0
                         self.twist.angular.z = 0
@@ -262,23 +265,23 @@ class Follower: # create class
                             # finding HSV of centre of circle, and comparing with
                             # thresholds to get colour found
                             centerHSV = self.hsvNoCircle[centerY, centerX]
-                            
+
                             # first if statement excludes errors in reading HSV values
                             #print(centerHSV)
                             if not centerHSV[1] == 0 and not centerHSV[2] == 155:
                                 if (centerHSV[0] >= self.lowerRed[0] and centerHSV[0] <= self.upperRed[0]) or \
-                                (centerHSV[0] >= 170 and centerHSV[0] <= 180):
+                                        (centerHSV[0] >= 170 and centerHSV[0] <= 180):
                                     self.coloursVisited[0] = True
-                                    print("Red found!")
+                                    print(str(time()-self.tS) + " - Red found!")
                                 elif centerHSV[0] >= self.lowerGreen[0] and centerHSV[0] <= self.upperGreen[0]:
                                     self.coloursVisited[1] = True
-                                    print("Green found!")
+                                    print(str(time()-self.tS) + " - Green found!")
                                 elif centerHSV[0] >= self.lowerBlue[0] and centerHSV[0] <= self.upperBlue[0]:
                                     self.coloursVisited[2] = True
-                                    print("Blue found!")
+                                    print(str(time()-self.tS) + " - Blue found!")
                                 elif centerHSV[0] >= self.lowerYellow[0] and centerHSV[0] <= self.upperYellow[0]:
                                     self.coloursVisited[3] = True
-                                    print("Yellow found!")
+                                    print(str(time()-self.tS) + " - Yellow found!")
 
                         except:
                             pass
@@ -303,14 +306,14 @@ class Follower: # create class
                             self.twist.linear.x = 0
                             self.twist.angular.z = 0
                             #self.countSpin = 200
-                            
+
                             #self.twist.angular.z = 0
                         elif self.listCount <= len(self.listOfPoints):
                             # fist element of the list of points self.activate = False
                             self.moveToGoal(self.listOfPoints[self.listCount][0], self.listOfPoints[self.listCount][1])
                             self.listCount += 1
                             self.countSpin = 0
-                            
+
                         else:
                             # if it is last element quit program
                             print("finish program")
@@ -338,7 +341,7 @@ class Follower: # create class
                     cv2.destroyAllWindows()
                     exit()
 
-                   
+
 
 
 

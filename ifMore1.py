@@ -7,7 +7,7 @@ import rospy
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Twist, PoseStamped, Pose, Point, Quaternion, PoseWithCovariance
 from std_msgs.msg import Header
-from time import sleep
+from time import sleep, time
 from move_base_msgs.msg import MoveBaseActionGoal, MoveBaseGoal, MoveBaseAction
 from random import random
 from tf.transformations import quaternion_from_euler
@@ -24,7 +24,7 @@ class Follower: # create class
         self.moveSomewhere = rospy.Publisher('/move_base/goal', MoveBaseActionGoal, queue_size=2)
         # counts the spins when the robot turns
         self.countSpin = 0
-        #
+        self.timeHere=time()
         self.moveBase = actionlib.SimpleActionClient("move_base", MoveBaseAction)
         # ros library to convert ROS images to OpenCV
         self.bridge = cv_bridge.CvBridge()
@@ -55,7 +55,7 @@ class Follower: # create class
         # unseen colour variable for later on to be stored in to
         self.firstUnseenInd = 0
         # array of the desired points to visit
-        self.listOfPoints = [(4,-3),(4,-4),(-4,-4),(0.5, -0.2),(2,-1) ,(-1.5, 3.5),(2,-4), (-4,1.6),(-4.5,5),(-4,1),(-4.5,4),]
+        self.listOfPoints = [(4,-4),(-4,-4),(0.5, -0.2),(3,-1) ,(-1.5, 3.5),(3,4), (-4,1.6),(-4,5),(-4,1),(-4,-2),(-1,-2)] # 10
         # counter for visited points 
         self.listCount = 0
         # boolian variable to check if the searching function is on 
@@ -170,9 +170,11 @@ class Follower: # create class
 
 
     def main(self):
+        #print("Start at : " + str(self.timeHere))
         while not rospy.is_shutdown():
             # end program if all 4 colours are found
             if numpy.sum(numpy.array(self.coloursVisited).astype('int')) == 4:
+                print("All colours found in : " + str(time()-self.timeHere) + " seconds !")
                 self.twist.linear.x = 0.0
                 self.twist.angular.z = 0.0
                 self.velocityPublisher.publish(self.twist)
@@ -227,8 +229,8 @@ class Follower: # create class
                     #print(distanceToObject)
                     #print(numpy.isnan(distanceToObject))
                     #print(colourAvgFilt)
-                    if numpy.isnan(distanceToObject):
-                        break
+                    if numpy.isnan(distanceToObject) or distanceToObject > 4.5:
+                        continue
                     
                     if distanceToObject > 1.0 or numpy.isnan(distanceToObject):
                         #self.twist.linear.x = 0.6
@@ -243,7 +245,9 @@ class Follower: # create class
                         else:
                             error = centerX - width/2
                             #print(distanceToObject)
-                            self.twist.angular.z = -float(error) / 100
+                            #self.twist.linear.x = 0.5
+
+                            self.twist.angular.z = -float(error) / 1000
                             self.velocityPublisher.publish(self.twist)
 
                         
@@ -270,17 +274,20 @@ class Follower: # create class
                                 if (centerHSV[0] >= self.lowerRed[0] and centerHSV[0] <= self.upperRed[0]) or \
                                 (centerHSV[0] >= 170 and centerHSV[0] <= 180):
                                     self.coloursVisited[0] = True
-                                    print("Red found!")
+                                    print("Red found in : " + str(time()-self.timeHere) + " seconds !")
+                                    continue
                                 elif centerHSV[0] >= self.lowerGreen[0] and centerHSV[0] <= self.upperGreen[0]:
                                     self.coloursVisited[1] = True
-                                    print("Green found!")
+                                    print("Green found in : " + str(time()-self.timeHere) + " seconds !")
+                                    continue
                                 elif centerHSV[0] >= self.lowerBlue[0] and centerHSV[0] <= self.upperBlue[0]:
                                     self.coloursVisited[2] = True
-                                    print("Blue found!")
+                                    print("Blue found in : " + str(time()-self.timeHere) + " seconds !")
+                                    continue
                                 elif centerHSV[0] >= self.lowerYellow[0] and centerHSV[0] <= self.upperYellow[0]:
                                     self.coloursVisited[3] = True
-                                    print("Yellow found!")
-
+                                    print("Yellow found in : " + str(time()-self.timeHere) + " seconds !")
+                                    continue
                         except:
                             pass
                 else:
@@ -314,7 +321,7 @@ class Follower: # create class
                             
                         else:
                             # if it is last element quit program
-                            print("finish program")
+                            print("All colours found in : " + str(time()-self.timeHere) + " seconds !")
                             self.twist.linear.x = 0.0
                             self.twist.angular.z = 0.0
                             self.velocityPublisher.publish(self.twist)
@@ -332,7 +339,7 @@ class Follower: # create class
                     self.listCount += 1
                 else:
                     # if it is last element quit program
-                    print("finish program")
+                    print("All colours found in : " + str(time()-self.timeHere) + " seconds !")
                     self.twist.linear.x  = 0.0
                     self.twist.angular.z = 0.0
                     self.velocityPublisher.publish(self.twist)

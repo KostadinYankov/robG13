@@ -53,7 +53,7 @@ class Follower: # create class
         # unseen colour variable for later on to be stored in to
         self.firstUnseenInd = 0
         # array of the desired points to visit
-        self.listOfPoints = [(4,-4),(-4,-4),(0.5, -0.2), (-1.5, 3.5), (-4,1.6),(-4.5,5),(-4,1),(-4.5,4),]
+        self.listOfPoints = [(4,-4),(-4,-4),(0.5, -0.2), (-1.5, 3.5), (-4,1.6),(-4.5,5),(-4,1),(-4.5,4),] # 8
         # counter for visited points 
         self.listCount = 0
         # boolian variable to check if the searching function is on 
