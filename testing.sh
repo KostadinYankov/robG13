@@ -1,8 +1,8 @@
 #!/bin/bash
 
-for i in {1..5} 
+for i in {1..2} 
 do
-	touch testLogRun1_$i.txt
+	touch logRun6_$i.txt
 	echo $i
-	python robG13-master/ifMore1.py >> testLogRun1_$i.txt
+	python ifMore1.py >> logRun6_$i.txt
 done

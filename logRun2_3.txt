@@ -1,0 +1,19 @@
+Moving to next position !
+Object is now: 0.699902296066m away.
+Yellow found in : 59.0161318779 seconds !
+Moving to next position !
+Object is now: 0.629409015179m away.
+Red found in : 105.318696022 seconds !
+Moving to next position !
+Moving to next position !
+Moving to next position !
+Moving to next position !
+Moving to next position !
+Object is now: 0.523719072342m away.
+Blue found in : 301.244447947 seconds !
+Moving to next position !
+Moving to next position !
+Moving to next position !
+Object is now: 0.466246157885m away.
+Green found in : 407.555827856 seconds !
+All colours found in : 407.555870056 seconds !

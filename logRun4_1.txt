@@ -1,0 +1,43 @@
+Moving to next position !
+Moving to next position !
+Moving to next position !
+Moving to next position !
+Object is now: 0.856548190117m away.
+Red found in : 47.4493398666 seconds !
+Moving to next position !
+Moving to next position !
+Moving to next position !
+Moving to next position !
+Moving to next position !
+Object is now: 0.698282301426m away.
+Yellow found in : 248.112259865 seconds !
+Moving to next position !
+Moving to next position !
+Moving to next position !
+Moving to next position !
+Object is now: 0.648045659065m away.
+Green found in : 410.441596985 seconds !
+Moving to next position !
+Object is now: 0.434383124113m away.
+Blue found in : 446.265673876 seconds !
+All colours found in : 446.265702963 seconds !
+Moving to next position !
+Object is now: 0.640613496304m away.
+Object is now: 0.648444056511m away.
+Red found in : 60.659083128 seconds !
+Moving to next position !
+Moving to next position !
+Object is now: 0.912116825581m away.
+Green found in : 130.075397968 seconds !
+Moving to next position !
+Object is now: 0.533898472786m away.
+Yellow found in : 180.250777006 seconds !
+Moving to next position !
+Moving to next position !
+Moving to next position !
+Moving to next position !
+Moving to next position !
+Moving to next position !
+Object is now: 0.561765253544m away.
+Blue found in : 412.165596008 seconds !
+All colours found in : 412.165621996 seconds !
